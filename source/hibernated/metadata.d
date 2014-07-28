@@ -3622,14 +3622,20 @@ class TableInfo {
     }
     string getCreateTableSQL() {
         string res;
+        string uniqueconstrains;
         foreach(col; columns) {
             if (res.length > 0)
                 res ~= ", ";
             res ~= col.columnDefinition;
+            if( col.property !is null && col.property.uniqueIndex.length > 0 )
+            {
+                uniqueconstrains ~= ", CONSTRAINT " ~ schema.dialect.quoteIfNeeded( col.property.uniqueIndex ) ~ " UNIQUE(" ~ schema.dialect.quoteIfNeeded( col.columnName ) ~ ")";
+                writefln( "col:%s.%s constrain:%s", col.table.tableName, col.columnName, col.property.uniqueIndex ); 
+            }
         }
         if (pkDef !is null)
             res ~= ", " ~ pkDef;
-        return "CREATE TABLE " ~ schema.dialect.quoteIfNeeded(tableName) ~ " (" ~ res ~ ")";
+        return "CREATE TABLE " ~ schema.dialect.quoteIfNeeded(tableName) ~ " (" ~ res ~ uniqueconstrains ~ ")";
     }
     string getDropTableSQL() {
         return "DROP TABLE IF EXISTS " ~ schema.dialect.quoteIfNeeded(tableName);

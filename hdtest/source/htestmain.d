@@ -20,12 +20,14 @@ version( USE_PGSQL )
 @Table( "gebruiker" )
 class User {
     long id;
+    @UniqueKey
     string name;
     int some_field_with_underscore;
     @ManyToMany // cannot be inferred, requires annotation
     LazyCollection!Role roles;
     //@ManyToOne
     MyGroup group;
+    bool active;
 }
 
 class Role {
@@ -41,6 +43,16 @@ class MyGroup {
     string name;
     @OneToMany
     LazyCollection!User users;
+}
+
+@Entity
+class Token {
+    long id;
+    @NotNull
+    @UniqueKey
+    string   name;
+    @UniqueKey
+    string   token;
 }
 
 void testHibernate() {
@@ -60,13 +72,13 @@ void testHibernate() {
         params["password"] = "secret";
         params["ssl"] = "true";
         PGSQLDriver driver = new PGSQLDriver();
-        DataSource ds = new ConnectionPoolDataSourceImpl(driver,url, params);
+        DataSource ds = new ConnectionPoolDataSourceImpl(driver, url, params);
         Dialect dialect = new PGSQLDialect();
     }
 
     // create metadata from annotations
     writeln("Creating schema from class list");
-    EntityMetaData schema = new SchemaInfoImpl!(User, Role, MyGroup);
+    EntityMetaData schema = new SchemaInfoImpl!(User, Role, MyGroup, Token);
     //writeln("Creating schema from module list");
     //EntityMetaData schema2 = new SchemaInfoImpl!(htestmain);
 
@@ -114,14 +126,17 @@ void testHibernate() {
     u10.name = "Alex";
     u10.roles = [r10, r11];
     u10.group = grp3;
+    u10.active = true;
     User u12 = new User();
     u12.name = "Arjan";
     u12.roles = [r10, r11];
     u12.group = grp2;
+    u12.active = true;
     User u13 = new User();
     u13.name = "Wessel";
     u13.roles = [r10, r11];
     u13.group = grp2;
+    u13.active = false;
 
     writeln("saving group 1-2-3" );
     sess.save( grp1 );
