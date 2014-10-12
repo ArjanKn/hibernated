@@ -28,6 +28,8 @@ class User {
     //@ManyToOne
     MyGroup group;
     bool active;
+
+    override string toString() { return "user: " ~ to!string( id ) ~ " " ~ name; }
 }
 
 class Role {
@@ -55,14 +57,20 @@ class Token {
     string   token;
 }
 
-void testHibernate() {
+
+//private to the module
+private DataSource ds = null;
+private Dialect dialect = null;
+
+
+void initDataSource() {
     // setup DB connection
     version( USE_SQLITE )
     {
         SQLITEDriver driver = new SQLITEDriver();
         string[string] params;
-        DataSource ds = new ConnectionPoolDataSourceImpl(driver, "zzz.db", params);
-        Dialect dialect = new SQLiteDialect();
+        ds = new ConnectionPoolDataSourceImpl(driver, "zzz.db", params);
+        dialect = new SQLiteDialect();
     }
     version( USE_PGSQL )
     {
@@ -72,10 +80,12 @@ void testHibernate() {
         params["password"] = "secret";
         params["ssl"] = "true";
         PGSQLDriver driver = new PGSQLDriver();
-        DataSource ds = new ConnectionPoolDataSourceImpl(driver, url, params);
-        Dialect dialect = new PGSQLDialect();
+        ds = new ConnectionPoolDataSourceImpl(driver, url, params);
+        dialect = new PGSQLDialect();
     }
+}
 
+void testHibernate() {
     // create metadata from annotations
     writeln("Creating schema from class list");
     EntityMetaData schema = new SchemaInfoImpl!(User, Role, MyGroup, Token);
@@ -85,6 +95,8 @@ void testHibernate() {
 
     writeln("Creating session factory");
     // create session factory
+    initDataSource();
+    assert( ds );
     SessionFactory factory = new SessionFactoryImpl(schema, dialect, ds);
     scope(exit) factory.close();
 
@@ -175,9 +187,45 @@ void testHibernate() {
     //sess.remove(u11);
 }
 
+void testReadBack() {
+    writeln( "test read back with new db session" );
+    if( ds is null ) initDataSource();
+    assert( ds );
+    EntityMetaData schema = new SchemaInfoImpl!(User, Role, MyGroup, Token);
+    SessionFactory factory = new SessionFactoryImpl( schema, dialect, ds );
+    scope(exit) factory.close();
+
+    writeln("Creating DB schema");
+
+    // create session
+    Session sess = factory.openSession();
+    scope(exit) sess.close();
+
+    // use session to access DB
+    writeln("Querying DB Users");
+    Query q = sess.createQuery("FROM User ORDER BY name");
+    User[] list = q.list!User();
+    writeln("Result size is " ~ to!string(list.length));
+    foreach( ref u; list[0].roles[0].users )
+        writeln( u );
+
+    writeln("Query DB group" );
+    auto qresult = sess.createQuery("FROM MyGroup WHERE id=:id").setParameter( "id", 2 );
+    MyGroup grp2 = qresult.uniqueResult!MyGroup();
+    foreach( ref u; grp2.users )
+        writeln( u );
+}
+
+
 void main()
 {
-    testHibernate();
+    try {
+        testHibernate();
+        testReadBack();
+    } catch( Exception e )
+    {
+        writeln( e );
+    }
     writeln("Press any key");
     readln();
 

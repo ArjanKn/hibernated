@@ -547,6 +547,8 @@ bool hasAnnotation(T, A)() {
 }
 
 bool isGetterFunction(alias overload, string methodName)() {
+    //akn fix this?
+    bool retval = false;
     //pragma(msg, "isGetterFunction " ~ methodName ~ " " ~ typeof(overload).stringof);
     static if (is(typeof(overload) == function)) {
         //pragma(msg, "is function " ~ methodName ~ " " ~ typeof(overload).stringof);
@@ -555,16 +557,19 @@ bool isGetterFunction(alias overload, string methodName)() {
             static if (functionAttributes!overload & FunctionAttribute.property) {
                 //pragma(msg, "is property");
                 //writeln("is property or starts with get or is");
-                return true;
+                //return true;
+                retval = true;
             }
             static if (methodName.startsWith("get") || methodName.startsWith("get")) {
                 //pragma(msg, "is getter");
                 //writeln("is property or starts with get or is");
-                return true;
+                //return true;
+                retval = true;
             }
         }
     }
-    return false;
+    //return false;
+    return retval;
 }
 
 /// returns true if class member has specified anotations
