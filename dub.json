@@ -5,10 +5,18 @@
     "homepage": "https://github.com/buggins/hibernated",
     "license": "Boost Software License (BSL 1.0)",
     "dependencies": {
-        "ddbc": ">=0.2.11"
+        "ddbc": ">=0.2.24"
     },
     "targetType": "staticLibrary",
+    "targetPath": "lib",
     "configurations": [
+        {
+            "name": "full",
+            "versions": ["USE_MYSQL", "USE_SQLITE", "USE_PGSQL"],
+            "subConfigurations": {
+                "ddbc": "full"
+            }
+        },
         {
             "name": "MySQL",
             "versions": ["USE_MYSQL"],

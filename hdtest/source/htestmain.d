@@ -5,16 +5,6 @@ import std.string;
 import std.conv;
 import hibernated.core;
 import std.traits;
-version( USE_SQLITE )
-{
-    import ddbc.drivers.sqliteddbc;
-    import hibernated.dialects.sqlitedialect;
-}
-version( USE_PGSQL )
-{
-    import ddbc.drivers.pgsqlddbc;
-    import hibernated.dialects.pgsqldialect;
-}
 
 // Annotations of entity classes
 @Table( "gebruiker" )
@@ -72,7 +62,7 @@ void initDataSource() {
         ds = new ConnectionPoolDataSourceImpl(driver, "zzz.db", params);
         dialect = new SQLiteDialect();
     }
-    version( USE_PGSQL )
+    else version( USE_PGSQL )
     {
         string url = PGSQLDriver.generateUrl( "/tmp", 5432, "testdb" );
         string[string] params;
